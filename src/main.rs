@@ -8,6 +8,8 @@ fn setup(config: &mut airquality::Config) {
         Err(error) => panic!("There was an error reading from input."),
     };
 
+    println!("Please enter your zip code:");
+    io::stdin().read_line(&mut config.zip_code).unwrap();
     config.key = api_key;
     // config.save(String::from(""));  // todo so we can save.
 }

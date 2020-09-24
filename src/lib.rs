@@ -11,9 +11,18 @@ use rand::prelude::*;
 
 use json;
 
+use std::collections::HashMap;
+
+struct RenderData {
+    air_quality: String,
+    rating: String,
+    date_observed: String,
+    last_checked: SystemTime,
+}
 
 pub struct Config {
     pub key: String,
+    pub zip_code: String,
     pub is_setup: bool,
     pub service_root: String,
 }
@@ -22,6 +31,7 @@ impl Config {
     pub fn new(filename_and_path: &String) -> Config {
         let mut config = Config {
             key: String::new(),
+            zip_code: String::new(),
             is_setup: false,
             service_root: String::from("http://www.airnowapi.org/aq/observation/zipCode/current/?format=application/json"),
         };
@@ -68,8 +78,8 @@ pub struct Runtime {
     display_width: u16,
     display_height: u16,
     last_call: SystemTime,
-    air_quality: String,
-    terminal: Term
+    terminal: Term,
+    data: RenderData,
 }
 
 impl Runtime {
@@ -79,8 +89,13 @@ impl Runtime {
             display_height: 0,
             display_width: 0,
             last_call: SystemTime::now(),
-            air_quality: String::new(),
             terminal: Term::stdout(),
+            data: RenderData {
+                air_quality: String::new(),
+                rating: String::new(),
+                date_observed: String::from("NA"),
+                last_checked: SystemTime::now(),
+            }
         }
     }
 
@@ -93,7 +108,9 @@ impl Runtime {
         self.display_width =width;
 
         let service = DataService::new(self.config.service_root.clone(), self.config.key.clone());
-        self.air_quality = service.get_data_for_zip(String::from("98019"));
+
+        self.fill_data(&service);
+        self.draw();
 
         // loop
         loop {
@@ -102,7 +119,8 @@ impl Runtime {
                     // all good
                     if elapsed.as_secs() > 60 {
                         // get
-                        self.air_quality = service.get_data_for_zip(String::from("98019"));
+                        self.fill_data(&service);
+                        self.draw();
                     }
                 }
                 Err(e) => {
@@ -115,6 +133,15 @@ impl Runtime {
         }
     }
 
+    fn fill_data(&mut self, service: &DataService) {
+        let data = service.get_data_for_zip(self.config.zip_code.clone());
+
+        self.data.air_quality = data["AQI"].to_string();
+        self.data.date_observed = data["DateObserved"].to_string();
+        self.data.rating = data["Quality"].to_string();
+        self.data.last_checked = SystemTime::now();
+    }
+
     fn draw(&self) {
         let mut rng = thread_rng();
         let x = rng.gen_range(0, self.display_width);
@@ -123,8 +150,12 @@ impl Runtime {
         self.terminal.clear_screen().unwrap();
 
         self.terminal.move_cursor_to(x as usize, y as usize).unwrap();
+        let display = format!("air quality: {}", self.data.air_quality);
+        self.terminal.write_str(&display).unwrap();
 
-        let display = format!("air quality: {}", self.air_quality);
+        let y = y + 1;
+        self.terminal.move_cursor_to(x as usize, y as usize).unwrap();
+        let display = format!("rating: {}", self.data.rating);
         self.terminal.write_str(&display).unwrap();
     }
 }
@@ -142,14 +173,19 @@ impl DataService {
         }
     }
 
-    pub fn get_data_for_zip(&self, zip: String) -> String {
+    pub fn get_data_for_zip(&self, zip: String) -> HashMap<String, String> {
         let query = format!("{}&zipCode={}&distance=25", self.get_query_params(), zip);
         let resp = reqwest::blocking::get(query.as_str()).unwrap()
             .text().unwrap();
         let resp_obj = json::parse(&resp).unwrap();
         //     .json::<HashMap<String, String>>().unwrap();  // I know, bad bad.  But just playing with a prototype for the time being.
 
-        resp_obj[0]["AQI"].to_string()
+        let mut data = HashMap::new();
+        data.insert(String::from("AQI"), resp_obj[0]["AQI"].to_string());
+        data.insert(String::from("DateObserved"), resp_obj[0]["DateObserved"].to_string());
+        data.insert(String::from("Quality"), resp_obj[0]["Category"]["Name"].to_string());
+
+        data
     }
 
     fn get_query_params(&self) -> String {
