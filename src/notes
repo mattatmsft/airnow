@@ -1,0 +1,128 @@
+//     private_key: Option<String>,
+//     cert: Option<String>,
+// }
+
+// fn init_config() -> Result<Option<Config>, Box<dyn Error>> {
+//     // let theme = ColorfulTheme {
+//     //     values_style: Style::new().yellow().dim(),
+//     //     ..ColorfulTheme::default()
+//     // };
+
+//     let theme = ColorfulTheme::default();
+//     println!("Welcome to the setup wizard");
+
+//     if !Confirm::with_theme(&theme)
+//         .with_prompt("Do you want to continue?")
+//         .interact()?
+//     {
+//         return Ok(None);
+//     }
+
+//     let interface = Input::with_theme(&theme)
+//         .with_prompt("Interface")
+//         .default("127.0.0.1".parse().unwrap())
+//         .interact()?;
+
+//     let hostname = Input::with_theme(&theme)
+//         .with_prompt("Hostname")
+//         .interact()?;
+
+//     let tls = Select::with_theme(&theme)
+//         .with_prompt("Configure TLS")
+//         .default(0)
+//         .item("automatic with ACME")
+//         .item("manual")
+//         .item("no")
+//         .interact()?;
+
+//     let (private_key, cert, use_acme) = match tls {
+//         0 => (Some("acme.pkey".into()), Some("acme.cert".into()), true),
+//         1 => (
+//             Some(
+//                 Input::with_theme(&theme)
+//                     .with_prompt("  Path to private key")
+//                     .interact()?,
+//             ),
+//             Some(
+//                 Input::with_theme(&theme)
+//                     .with_prompt("  Path to certificate")
+//                     .interact()?,
+//             ),
+//             false,
+//         ),
+//         _ => (None, None, false),
+//     };
+
+//     Ok(Some(Config {
+//         hostname,
+//         interface,
+//         private_key,
+//         cert,
+//         use_acme,
+//     }))
+// }
+
+// fn main() {
+//     match init_config() {
+//         Ok(None) => println!("Aborted."),
+//         Ok(Some(config)) => println!("{:#?}", config),
+//         Err(err) => println!("error: {}", err),
+//     }
+// }
+
+// fn write_chars() -> io::Result<()> {
+//     let term = Term::stdout();
+//     let (heigth, width) = term.size();
+//     for x in 0..width {
+//         for y in 0..heigth {
+//             term.move_cursor_to(x as usize, y as usize)?;
+//             let text = if (x + y) % 2 == 0 {
+//                 format!("{}", style(x % 10).black().on_red())
+//             } else {
+//                 format!("{}", style(x % 10).red().on_black())
+//             };
+
+//             term.write_str(&text)?;
+//             thread::sleep(Duration::from_micros(600));
+//         }
+//     }
+//     Ok(())
+// }
+
+// fn main() {
+//     write_chars().unwrap();
+// }
+
+// use std::io::{self, Write};
+// use std::thread;
+// use std::time::Duration;
+
+// use console::{style, Term};
+
+// fn do_stuff() -> io::Result<()> {
+//     let term = Term::stdout();
+//     term.set_title("Counting...");
+//     term.write_line("Going to do some counting now")?;
+//     term.hide_cursor()?;
+//     for x in 0..10 {
+//         if x != 0 {
+//             term.move_cursor_up(1)?;
+//         }
+//         term.write_line(&format!("Counting {}/10", style(x + 1).cyan()))?;
+//         thread::sleep(Duration::from_millis(400));
+//     }
+//     term.show_cursor()?;
+//     term.clear_last_lines(1)?;
+//     term.write_line("Done counting!")?;
+//     writeln!(&term, "Hello World!")?;
+
+//     write!(&term, "To edit: ")?;
+//     let res = term.read_line_initial_text("default")?;
+//     writeln!(&term, "\n{}", res)?;
+
+//     Ok(())
+// }
+
+// fn main() {
+//     do_stuff().unwrap();
+// }
