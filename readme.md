@@ -1,4 +1,9 @@
+# AirNow-inator #
+This repo is another step where I'm learning to actually do things in Rust.  Is it useful?  Probably not.  But that's Ok, I'm learning things.  :)
 
+## Requirements ##
+If you want to run this, you need to get an AirNow API key from here:
+https://docs.airnowapi.org/login
 
 * Links and Examples *
 
